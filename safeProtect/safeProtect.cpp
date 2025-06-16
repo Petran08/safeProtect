@@ -81,7 +81,7 @@ void getKeyboardInput()
     }
 }
 
-void spawnEnemy(float x, float y, float hit, float size)
+void spawnEnemy(float x, float y, float hit, float size)//not used rn
 {
     enemy init;
     init.posx = x;
