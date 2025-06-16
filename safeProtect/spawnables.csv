@@ -1,0 +1,4 @@
+id,att_type,hp,hp_decrease,nrProj,hitProj,projDist,projAngles,projSpeed,hitbox,damage
+0,none,0,10,0,0,0,0,0,0,0
+1,proj,500,0,1,50|,100|,0|,20|,50,200|
+[()],,,,,,,,,,
