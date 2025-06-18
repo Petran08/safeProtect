@@ -17,7 +17,6 @@ csv_file spwn_data;
 
 float degToRad(float angle)
 {
-
 	return angle / 180 * PI;
 }
 
@@ -253,7 +252,7 @@ int stringToNr(std::string str)
 				 calcAngle = atan(tn);
 				 if (x < 0 && y < 0)
 					 calcAngle = PI - calcAngle;
-				 else if (x < 0 && y>0)
+				 else if (x < 0 && y > 0)
 					 calcAngle += PI;
 				 else if (x > 0 && y > 0)
 					 calcAngle = 2 * PI - calcAngle;
@@ -282,7 +281,7 @@ int stringToNr(std::string str)
 	 }
  }
 
- void superAttack(int& myId, float playerx, float playery, float mousex, float mousey, player p)
+ void superAttack(int& myId, float playerx, float playery, float mousex, float mousey, player p, double moment_activated)
  {
 	 if (chars[myId].sAttType == "proj")
 	 {

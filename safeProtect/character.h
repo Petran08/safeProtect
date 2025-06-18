@@ -10,7 +10,7 @@ float degToRad(float angle);
 
 void initChar();
 void spawnProjectiles(int& myId, float playerx, float playery, float mousex, float mousey, player p, std::string type);
-void superAttack(int& myId, float playerx, float playery, float mousex, float mousey, player p);
+void superAttack(int& myId, float playerx, float playery, float mousex, float mousey, player p, double moment_activated);
 
 
 
