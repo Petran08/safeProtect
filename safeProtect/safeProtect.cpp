@@ -13,10 +13,14 @@
 const int screenWidth = 1000;
 const int screenHeight = 600;
 const int mapSize = 10000;
-const int cellSize = 75;
+short int mapWidth;
+short int mapHeight;
+const int cellSize = 80;
 short int map[135][135];
 int myCharId = 0, maxId=4;
 double time_elapsed;
+int mapId = 1, maxMap=10;
+bool editMode = false;
 player myPlayer;
 character myChar;
 //camera myCamera;
@@ -24,10 +28,68 @@ Camera2D myNewCamera;
 std::vector <enemy> enemies;
 
 template <typename T>
+
 T clamp(T val, T minVal, T maxVal) {
     if (val < minVal) return minVal;
     if (val > maxVal) return maxVal;
     return val;
+}
+
+void write_map(int mapId, short int width, short int height)
+{
+    std::string mapName = "map_" + std::to_string(mapId) + ".txt";
+    std::ofstream write(mapName);
+    write << '0' << ' ' << width << ' ' << height << '\n'; // write the map size
+    for (int i = 0; i < width; i++)
+    {
+        for (int j = 0; j < height; j++)
+        {
+            write << map[i][j] << ' ';
+        }
+        write << '\n';
+    }
+}
+
+void read_map(int mapId, short int& width, short int& height)
+{
+    std::string mapName = "map_" + std::to_string(mapId) + ".txt";
+    std::ifstream read(mapName);
+    //std::ofstream write(mapName);
+    int isEmpty;
+    read >> isEmpty >> width >> height;
+    if (isEmpty == -1)
+    {
+		//write << '0 ' << width << ' ' << height; // write the map size
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = 0; j < height; j++)
+            {
+                map[i][j] = 0;
+                //write << '0';
+            }
+            //write << '\n';
+        }
+		write_map(mapId, width, height); // write the empty map
+    }
+    else
+    {
+        for (int i = 0; i < width; i++)
+        {
+            for (int j = 0; j < height; j++)
+            {
+                read >> map[i][j];
+            }
+        }
+    }
+}
+
+void empty_map(int mapid, short int& width, short int& height)
+{
+    std::string mapName = "map_" + std::to_string(mapId) + ".txt";
+    std::ofstream write(mapName);
+    write << -1 << ' ' << width << ' ' << height << '\n'; // write the map size
+    write.close();
+    read_map(mapid, width, height);
 }
 
 void getKeyboardInput()
@@ -94,6 +156,33 @@ void getKeyboardInput()
         else
             myNewCamera.zoom = 1.5f;
     }
+    if (IsKeyPressed(KEY_E))
+    {
+        if (editMode)
+            write_map(mapId, mapWidth, mapHeight);
+        editMode = !editMode;
+    }
+    Vector2 mousePos = GetMousePosition();
+    if (IsKeyDown(KEY_ONE) && editMode)
+    {
+        map[int((std::max(int(myPlayer.posx_abs), screenWidth / 2) + mousePos.x - screenWidth / 2) / cellSize)][int((std::max(int(myPlayer.posy_abs), screenHeight / 2) + mousePos.y - screenHeight / 2) / cellSize)] = 0;
+    }
+    else if (IsKeyDown(KEY_TWO) && editMode)
+    {
+        map[int((std::max(int(myPlayer.posx_abs), screenWidth / 2) + mousePos.x - screenWidth / 2) / cellSize)][int((std::max(int(myPlayer.posy_abs), screenHeight / 2) + mousePos.y - screenHeight / 2) / cellSize)] = 8;
+    }
+    if (IsKeyPressed(KEY_R) && editMode)
+    {
+        empty_map(mapId, mapWidth, mapHeight);
+    }
+    if (IsKeyPressed(KEY_X))
+    {
+        write_map(mapId, mapWidth, mapHeight);
+        mapId++;
+        if (mapId > maxMap)
+            mapId = 1;
+        read_map(mapId, mapWidth, mapHeight);
+    }
 }
 
 void spawnEnemy(float x, float y, float hit, float size)//not used rn
@@ -108,8 +197,8 @@ void spawnEnemy(float x, float y, float hit, float size)//not used rn
 
 void drawBackground()
 {
-    for (int i = 0; i < mapSize / cellSize; i++)
-        for (int j = 0; j < mapSize / cellSize; j++)
+    for (int i = 0; i < mapWidth; i++)
+        for (int j = 0; j < mapHeight; j++)
             if (map[i][j] == 8)
                 DrawRectangle(i * cellSize, j * cellSize, cellSize, cellSize, BROWN);
             else if ((i + j) % 2 == 0)
@@ -151,8 +240,7 @@ void movePlayer()
         myPlayer.posy_abs -= (myPlayer.speed) * sin(myPlayer.angle);
         myPlayer.posy_abs = int(myPlayer.posy_abs);
 
-        myPlayer.posx_abs = clamp(myPlayer.posx_abs, 0.0f, float(mapSize));
-        myPlayer.posy_abs = clamp(myPlayer.posy_abs, 0.0f, float(mapSize));
+        const float cameraMargin = 24.0f / myNewCamera.zoom;
 
         //if(myPlayer.posy_abs>=screenHeight/2)
             //myCamera.posy = myPlayer.posy_abs;
@@ -171,12 +259,12 @@ void movePlayer()
 void getMouseInput()
 {
     bool truem = IsMouseButtonPressed(MOUSE_BUTTON_LEFT), truen = IsMouseButtonPressed(MOUSE_BUTTON_RIGHT);
-    if (true || IsKeyPressed(KEY_C))// for debugging reasons
+    if (truem || IsKeyPressed(KEY_C))// for debugging reasons
     {
         //Vector2 mousePos = GetMousePosition();
         Vector2 mousePos = GetMousePosition();
         Vector2 worldPos = { myPlayer.posx_coll, myPlayer.posy_coll };
-        Vector2 screenPos = GetWorldToScreen2D(worldPos, myNewCamera);//useless
+        //Vector2 screenPos = GetWorldToScreen2D(worldPos, myNewCamera);//useless
         //std::cout << screenPos.x << " " << screenPos.y << '\n';
         spawnProjectiles(myCharId, worldPos.x, worldPos.y, float(mousePos.x), float(mousePos.y), myPlayer, "attack");
     }
@@ -185,7 +273,7 @@ void getMouseInput()
         //Vector2 mousePos = GetMousePosition();
         Vector2 mousePos = GetMousePosition();
         Vector2 worldPos = { myPlayer.posx_coll, myPlayer.posy_coll };
-        Vector2 screenPos = GetWorldToScreen2D(worldPos, myNewCamera);//useless
+        //Vector2 screenPos = GetWorldToScreen2D(worldPos, myNewCamera);//useless
         superAttack(myCharId, worldPos.x, worldPos.y, float(mousePos.x), float(mousePos.y), myPlayer, time_elapsed);
     }
 }
@@ -205,19 +293,19 @@ void moveProjectiles()
     }
 }
 
-void mapinit()
+/*void mapinit()
 {
     map[0][0] = 8;
     map[4][7] = 8;
     map[10][14] = 8;
-}
+}*/
 
 int main()
 {
     InitWindow(screenWidth, screenHeight, "Safe Protector");
     SetTargetFPS(60);
     initChar();
-    mapinit();
+    read_map(mapId, mapWidth, mapHeight);
     myChar = chars[myCharId];
     myPlayer.width = myChar.hitbox * 2;
     myPlayer.height = myChar.hitbox * 2;
@@ -246,6 +334,8 @@ int main()
         movePlayer();
         moveProjectiles();
         
+        //start rendering
+
         myNewCamera.target = Vector2{ (float)myPlayer.posx_abs, (float)myPlayer.posy_abs };
         
         // Calculate half of the visible area in world coordinates
@@ -253,12 +343,13 @@ int main()
         float halfScreenHeight = screenHeight / 2.0f / myNewCamera.zoom;
 
         // Clamp the camera target to map boundaries
-        const float cameraMargin = 22.5f / myNewCamera.zoom;
+        const float cameraMargin = 24.0f / myNewCamera.zoom;
 
-        myNewCamera.target.x = clamp(myNewCamera.target.x, halfScreenWidth, mapSize - halfScreenWidth - cameraMargin);
-        myNewCamera.target.y = clamp(myNewCamera.target.y, halfScreenHeight, mapSize - halfScreenHeight - cameraMargin);
+        myNewCamera.target.x = clamp(myNewCamera.target.x, halfScreenWidth, cellSize * mapWidth - halfScreenWidth - cameraMargin);
+        myNewCamera.target.y = clamp(myNewCamera.target.y, halfScreenHeight, cellSize * mapHeight - halfScreenHeight - cameraMargin);
 
-
+        myPlayer.posx_abs = clamp(myPlayer.posx_abs, 0.0f + myPlayer.width / 2, float(cellSize * mapWidth - cameraMargin - myPlayer.width / 2));
+        myPlayer.posy_abs = clamp(myPlayer.posy_abs, 0.0f + myPlayer.height / 2, float(cellSize * mapHeight - cameraMargin - myPlayer.height / 2));
 
         BeginDrawing();
         ClearBackground(BLACK);
@@ -277,7 +368,7 @@ int main()
         EndMode2D();
         Vector2 mousePos = GetMousePosition();
         Vector2 worldPos = { myPlayer.posx_coll, myPlayer.posy_coll };
-        Vector2 screenPos = GetWorldToScreen2D(worldPos, myNewCamera);
+        //Vector2 screenPos = GetWorldToScreen2D(worldPos, myNewCamera); USELESS
 
         // UI overlays (not affected by camera)
         std::stringstream buffer;
@@ -290,9 +381,14 @@ int main()
         buffer << "\n time elapsed: " << time_elapsed;
         buffer << "\n mouse position: " << mousePos.x << " " << mousePos.y;
         buffer << "\n zoom: " << myNewCamera.zoom;
+        buffer << "\n edit: " << bool(editMode);
+        //buffer << "\n on screen pos: " << screenPos.x << " " << screenPos.y; USELESS
+		buffer << "\n mapId: " << mapId;
         DrawText(buffer.str().c_str(), 10, 10, 30, BLACK);
 
         EndDrawing();
+
+		//end rendering
 
         //end it here
         end = std::chrono::high_resolution_clock::now();
@@ -302,6 +398,7 @@ int main()
         //start time here
         start = std::chrono::high_resolution_clock::now();
     }
+    write_map(mapId, mapWidth, mapHeight);
     CloseWindow();
     return 0;
 }

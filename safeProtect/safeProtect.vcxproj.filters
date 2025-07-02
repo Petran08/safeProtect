@@ -67,4 +67,7 @@
     <None Include="data_char.csv" />
     <None Include="spawnables.csv" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="map_1.txt" />
+  </ItemGroup>
 </Project>
