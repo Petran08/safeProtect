@@ -41,7 +41,7 @@ int stringToNr(std::string str)
 	 char_data.read_file();
 	 for (int i = 0; i < char_data.rows_used; i++)
 	 {
-		 std::cout << i << '\n';
+		 //std::cout << i << '\n';
 		 init.name = char_data.contents[i][0];
 		 init.nrProjectiles = stringToNr(char_data.contents[i][1]);
 		 std::string val = char_data.contents[i][2];

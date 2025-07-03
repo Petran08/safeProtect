@@ -26,6 +26,7 @@ character myChar;
 //camera myCamera;
 Camera2D myNewCamera;
 std::vector <enemy> enemies;
+Vector2 collPoints[8];
 
 template <typename T>
 
@@ -33,6 +34,23 @@ T clamp(T val, T minVal, T maxVal) {
     if (val < minVal) return minVal;
     if (val > maxVal) return maxVal;
     return val;
+}
+
+void intitPlayerCollPoints()
+{
+    collPoints[0] = { -myPlayer.width / 2, -myPlayer.height / 2 };
+    collPoints[1] = { 0, -myPlayer.height / 2 };
+    collPoints[2] = { myPlayer.width / 2, -myPlayer.height / 2 };
+    collPoints[3] = { myPlayer.width / 2, 0 };
+    collPoints[4] = { myPlayer.width / 2, myPlayer.height / 2 };
+    collPoints[5] = { 0, myPlayer.height / 2 };
+    collPoints[6] = { -myPlayer.width / 2, myPlayer.height / 2 };
+    collPoints[7] = { -myPlayer.width / 2, 0 };
+}
+
+short int returnTileId(int x, int y)
+{
+    return map[int(x / cellSize)][int(y / cellSize)];
 }
 
 void write_map(int mapId, short int width, short int height)
@@ -148,6 +166,7 @@ void getKeyboardInput()
         myChar = chars[myCharId];
         myPlayer.width = myChar.hitbox * 2;
         myPlayer.height = myChar.hitbox * 2;
+        intitPlayerCollPoints();
     }
     if (IsKeyPressed(KEY_Z))
     {
@@ -165,11 +184,11 @@ void getKeyboardInput()
     Vector2 mousePos = GetMousePosition();
     if (IsKeyDown(KEY_ONE) && editMode)
     {
-        map[int((std::max(int(myPlayer.posx_abs), screenWidth / 2) + mousePos.x - screenWidth / 2) / cellSize)][int((std::max(int(myPlayer.posy_abs), screenHeight / 2) + mousePos.y - screenHeight / 2) / cellSize)] = 0;
+        map[int((myNewCamera.target.x + mousePos.x - screenWidth / 2) / cellSize)][int((myNewCamera.target.y + mousePos.y - screenHeight / 2) / cellSize)] = 0;
     }
     else if (IsKeyDown(KEY_TWO) && editMode)
     {
-        map[int((std::max(int(myPlayer.posx_abs), screenWidth / 2) + mousePos.x - screenWidth / 2) / cellSize)][int((std::max(int(myPlayer.posy_abs), screenHeight / 2) + mousePos.y - screenHeight / 2) / cellSize)] = 8;
+        map[int((myNewCamera.target.x + mousePos.x - screenWidth / 2) / cellSize)][int((myNewCamera.target.y + mousePos.y - screenHeight / 2) / cellSize)] = 8;
     }
     if (IsKeyPressed(KEY_R) && editMode)
     {
@@ -228,6 +247,39 @@ void drawBackground()
     DrawText(buffer.str().c_str(), 10, 10, 30, BLACK);
 }
 */
+
+void checkCollision()
+{
+    int a = 0;
+    for (int i = 0; i < 8; i++)
+    {
+        if (returnTileId(myPlayer.posx_abs + collPoints[i].x, myPlayer.posy_abs + collPoints[i].y) == 8)
+        {
+            while(returnTileId(myPlayer.posx_abs + collPoints[i].x, myPlayer.posy_abs + collPoints[i].y) == 8)
+            {
+                if (myPlayer.angle == PI / 2 && myPlayer.angle == 3 * PI / 2)
+                {
+                    myPlayer.posx_abs += (2) * cos(myPlayer.angle);
+                    myPlayer.posx_abs = int(myPlayer.posx_abs);
+
+                    myPlayer.posy_abs += (2) * sin(myPlayer.angle);
+                    myPlayer.posy_abs = int(myPlayer.posy_abs);
+                }
+                else
+                {
+                    myPlayer.posx_abs -= (2) * cos(myPlayer.angle);
+                    myPlayer.posx_abs = int(myPlayer.posx_abs);
+
+                    myPlayer.posy_abs -= (2) * sin(myPlayer.angle);
+                    myPlayer.posy_abs = int(myPlayer.posy_abs);
+                }
+            }
+            break;
+        }
+    }
+    
+}
+
 void movePlayer()
 {
     if (myPlayer.isMoving)
@@ -244,6 +296,7 @@ void movePlayer()
 
         //if(myPlayer.posy_abs>=screenHeight/2)
             //myCamera.posy = myPlayer.posy_abs;
+        checkCollision();
         
     }
     myPlayer.posx_rel = (myPlayer.posx_abs - myNewCamera.target.x) * myNewCamera.zoom + screenWidth / 2;
@@ -312,6 +365,8 @@ int main()
     //myCamera.posx = myPlayer.posx_abs;
     //myCamera.posy = myPlayer.posy_abs;
     
+    intitPlayerCollPoints();
+
     myNewCamera.target = Vector2{ (float)myPlayer.posx_abs, (float)myPlayer.posy_abs };
     myNewCamera.offset = Vector2{ screenWidth / 2.0f,screenHeight / 2.0f };
     myNewCamera.rotation = 0.0f;
@@ -365,6 +420,12 @@ int main()
                 DrawCircle(proj[i].x, proj[i].y, proj[i].hitbox, BLUE);
         }
 
+        //collison points
+        for (int i = 0; i < 8; i++)
+        {
+            DrawCircle(myPlayer.posx_abs + collPoints[i].x, myPlayer.posy_abs + collPoints[i].y, 5, RED);
+        }
+
         EndMode2D();
         Vector2 mousePos = GetMousePosition();
         Vector2 worldPos = { myPlayer.posx_coll, myPlayer.posy_coll };
@@ -374,7 +435,7 @@ int main()
         std::stringstream buffer;
         buffer << "myCharId: " << myCharId;
         buffer << '\n';
-        buffer << "Tile Id: " << map[int(myPlayer.posx_abs / cellSize)][int(myPlayer.posy_abs / cellSize)];
+        buffer << "Tile Id: " << returnTileId(myPlayer.posx_abs, myPlayer.posy_abs);
         buffer << "\n pos_abs: " << myPlayer.posx_abs << " " << myPlayer.posy_abs;
         buffer << "\n pos_coll: " << myPlayer.posx_coll << " " << myPlayer.posy_coll;
         buffer << "\n camera target: " << myNewCamera.target.x << " " << myNewCamera.target.y;
