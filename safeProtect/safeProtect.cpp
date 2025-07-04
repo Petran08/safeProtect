@@ -4,6 +4,8 @@
 #include <sstream>
 #include <cmath>
 #include <chrono>
+#include <ctime>
+#include <cstdlib>
 #include "raylib.h"
 #include "player.h"
 #include "character.h"
@@ -27,6 +29,7 @@ character myChar;
 Camera2D myNewCamera;
 std::vector <enemy> enemies;
 Vector2 collPoints[8];
+short int collActive[8];
 
 template <typename T>
 
@@ -226,27 +229,71 @@ void drawBackground()
                 DrawRectangle(i * cellSize, j * cellSize, cellSize, cellSize, DARKGREEN);
 }
 
-/*void drawScreen()
+void drawScreen()
 {
-    ClearBackground(BLACK);
-    drawBackground();
-    DrawRectangle(myPlayer.posx_rel, myPlayer.posy_rel, myPlayer.width, myPlayer.height, WHITE);
-    for (int i = 0; i < proj.size(); i++)
-    {
-        if(proj[i].active)
-            DrawCircle(proj[i].x - myCamera.posx + screenWidth / 2, proj[i].y - myCamera.posy + screenHeight / 2, proj[i].hitbox, BLUE);
-    }
-    std::stringstream buffer;
-    buffer << "myCharId: " << myCharId;
-    buffer << '\n';
-    buffer << "Tile Id: " << map[int(myPlayer.posx_abs / cellSize)][int(myPlayer.posy_abs / cellSize)];
-    buffer << "\n pos_abs: " << myPlayer.posx_abs << " " << myPlayer.posy_abs;
-    buffer << "\n pos_rel: " << myPlayer.posx_rel << " " << myPlayer.posy_rel;
-    buffer << "\n pos_coll: " << myPlayer.posx_coll << " " << myPlayer.posy_coll;
-    buffer << "\n time elapsed: " << time_elapsed;
-    DrawText(buffer.str().c_str(), 10, 10, 30, BLACK);
+    //start rendering
+
+        myNewCamera.target = Vector2{ (float)myPlayer.posx_abs, (float)myPlayer.posy_abs };
+        
+        // Calculate half of the visible area in world coordinates
+        float halfScreenWidth = screenWidth / 2.0f / myNewCamera.zoom;
+        float halfScreenHeight = screenHeight / 2.0f / myNewCamera.zoom;
+
+        // Clamp the camera target to map boundaries
+        const float cameraMargin = 24.0f / myNewCamera.zoom;
+
+        myNewCamera.target.x = clamp(myNewCamera.target.x, halfScreenWidth, cellSize * mapWidth - halfScreenWidth - cameraMargin);
+        myNewCamera.target.y = clamp(myNewCamera.target.y, halfScreenHeight, cellSize * mapHeight - halfScreenHeight - cameraMargin);
+
+        myPlayer.posx_abs = clamp(myPlayer.posx_abs, 0.0f + myPlayer.width / 2, float(cellSize * mapWidth - cameraMargin - myPlayer.width / 2));
+        myPlayer.posy_abs = clamp(myPlayer.posy_abs, 0.0f + myPlayer.height / 2, float(cellSize * mapHeight - cameraMargin - myPlayer.height / 2));
+
+        BeginDrawing();
+        ClearBackground(BLACK);
+        BeginMode2D(myNewCamera);
+
+        drawBackground();
+        DrawRectangle(myPlayer.posx_abs - myPlayer.width / 2, myPlayer.posy_abs - myPlayer.height / 2, myPlayer.width, myPlayer.height, WHITE);
+
+        // projectiles
+        for (int i = 0; i < proj.size(); i++)
+        {
+            if (proj[i].active)
+                DrawCircle(proj[i].x, proj[i].y, proj[i].hitbox, BLUE);
+        }
+
+        //collison points
+        for (int i = 0; i < 8; i++)
+        {
+            DrawCircle(myPlayer.posx_abs + collPoints[i].x, myPlayer.posy_abs + collPoints[i].y, 5, RED);
+        }
+
+        EndMode2D();
+        Vector2 mousePos = GetMousePosition();
+        Vector2 worldPos = { myPlayer.posx_coll, myPlayer.posy_coll };
+        //Vector2 screenPos = GetWorldToScreen2D(worldPos, myNewCamera); USELESS
+
+        // UI overlays (not affected by camera)
+        std::stringstream buffer;
+        buffer << "myCharId: " << myCharId;
+        buffer << '\n';
+        buffer << "Tile Id: " << returnTileId(myPlayer.posx_abs, myPlayer.posy_abs);
+        buffer << "\n pos_abs: " << myPlayer.posx_abs << " " << myPlayer.posy_abs;
+        buffer << "\n pos_coll: " << myPlayer.posx_coll << " " << myPlayer.posy_coll;
+        buffer << "\n camera target: " << myNewCamera.target.x << " " << myNewCamera.target.y;
+        buffer << "\n time elapsed: " << time_elapsed;
+        buffer << "\n mouse position: " << mousePos.x << " " << mousePos.y;
+        buffer << "\n zoom: " << myNewCamera.zoom;
+        buffer << "\n edit: " << bool(editMode);
+        //buffer << "\n on screen pos: " << screenPos.x << " " << screenPos.y; USELESS
+		buffer << "\n mapId: " << mapId;
+        DrawText(buffer.str().c_str(), 10, 10, 30, BLACK);
+
+        EndDrawing();
+
+		//end rendering
 }
-*/
+
 
 void checkCollision()
 {
@@ -255,26 +302,11 @@ void checkCollision()
     {
         if (returnTileId(myPlayer.posx_abs + collPoints[i].x, myPlayer.posy_abs + collPoints[i].y) == 8)
         {
-            while(returnTileId(myPlayer.posx_abs + collPoints[i].x, myPlayer.posy_abs + collPoints[i].y) == 8)
-            {
-                if (myPlayer.angle == PI / 2 && myPlayer.angle == 3 * PI / 2)
-                {
-                    myPlayer.posx_abs += (2) * cos(myPlayer.angle);
-                    myPlayer.posx_abs = int(myPlayer.posx_abs);
-
-                    myPlayer.posy_abs += (2) * sin(myPlayer.angle);
-                    myPlayer.posy_abs = int(myPlayer.posy_abs);
-                }
-                else
-                {
-                    myPlayer.posx_abs -= (2) * cos(myPlayer.angle);
-                    myPlayer.posx_abs = int(myPlayer.posx_abs);
-
-                    myPlayer.posy_abs -= (2) * sin(myPlayer.angle);
-                    myPlayer.posy_abs = int(myPlayer.posy_abs);
-                }
-            }
-            break;
+            collActive[i] = 1;
+        }
+        else
+        {
+            collActive[i] = 0;
         }
     }
     
@@ -297,6 +329,94 @@ void movePlayer()
         //if(myPlayer.posy_abs>=screenHeight/2)
             //myCamera.posy = myPlayer.posy_abs;
         checkCollision();
+        if(collActive[1] == 1 || collActive[3] == 1 || collActive[5] == 1 || collActive[7] == 1)
+        {
+            if (collActive[1] == 1)
+            {
+                while (returnTileId(myPlayer.posx_abs + collPoints[1].x, myPlayer.posy_abs + collPoints[1].y) == 8)
+                {
+                    myPlayer.posy_abs += 1;
+                }
+            }
+            if (collActive[3] == 1)
+            {
+                while (returnTileId(myPlayer.posx_abs + collPoints[3].x, myPlayer.posy_abs + collPoints[3].y) == 8)
+                {
+                    myPlayer.posx_abs -= 1;
+                }
+            }
+            if (collActive[5] == 1)
+            {
+                while (returnTileId(myPlayer.posx_abs + collPoints[5].x, myPlayer.posy_abs + collPoints[5].y) == 8)
+                {
+                    myPlayer.posy_abs -= 1;
+                }
+            }
+            if (collActive[7] == 1)
+            {
+                while (returnTileId(myPlayer.posx_abs + collPoints[7].x, myPlayer.posy_abs + collPoints[7].y) == 8)
+                {
+                    myPlayer.posx_abs += 1;
+                }
+            }
+        }
+        else
+        {
+            srand(time(0));
+            int rndnr = rand() % 2; // worst way to implement collision, but it will do for now
+            //I WILL change it later
+            if (myPlayer.angle == 0 || myPlayer.angle == PI || myPlayer.angle == PI / 2 || myPlayer.angle == 3 * PI / 2)
+            {
+                while(returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                {
+                    myPlayer.posx_abs += (2) * cos(myPlayer.angle + PI);
+                    myPlayer.posx_abs = int(myPlayer.posx_abs);
+                    myPlayer.posy_abs -= (2) * sin(myPlayer.angle + PI);
+                    myPlayer.posy_abs = int(myPlayer.posy_abs);
+                }
+            }
+            else if(myPlayer.angle = PI / 4)
+            {
+                while (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                {
+                    myPlayer.posx_abs -= (2) * (rndnr % 2);
+                    myPlayer.posx_abs = int(myPlayer.posx_abs);
+                    myPlayer.posy_abs += (2) * ((rndnr + 1) % 2);
+                    myPlayer.posy_abs = int(myPlayer.posy_abs);
+                }
+            }
+            else if (myPlayer.angle = 3 * PI / 4)
+            {
+                while (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                {
+                    myPlayer.posx_abs += (2) * (rndnr % 2);
+                    myPlayer.posx_abs = int(myPlayer.posx_abs);
+                    myPlayer.posy_abs += (2) * ((rndnr + 1) % 2);
+                    myPlayer.posy_abs = int(myPlayer.posy_abs);
+                }
+            }
+            else if (myPlayer.angle = 5 * PI / 4)
+            {
+                while (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                {
+                    myPlayer.posx_abs += (2) * (rndnr % 2);
+                    myPlayer.posx_abs = int(myPlayer.posx_abs);
+                    myPlayer.posy_abs -= (2) * ((rndnr + 1) % 2);
+                    myPlayer.posy_abs = int(myPlayer.posy_abs);
+                }
+            }
+            else if (myPlayer.angle = 7* PI / 4)
+            {
+                while (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                {
+                    myPlayer.posx_abs -= (2) * (rndnr % 2);
+                    myPlayer.posx_abs = int(myPlayer.posx_abs);
+                    myPlayer.posy_abs += (2) * ((rndnr + 1) % 2);
+                    myPlayer.posy_abs = int(myPlayer.posy_abs);
+                }
+            }
+        }
+        
         
     }
     myPlayer.posx_rel = (myPlayer.posx_abs - myNewCamera.target.x) * myNewCamera.zoom + screenWidth / 2;
@@ -388,68 +508,7 @@ int main()
         getMouseInput();
         movePlayer();
         moveProjectiles();
-        
-        //start rendering
-
-        myNewCamera.target = Vector2{ (float)myPlayer.posx_abs, (float)myPlayer.posy_abs };
-        
-        // Calculate half of the visible area in world coordinates
-        float halfScreenWidth = screenWidth / 2.0f / myNewCamera.zoom;
-        float halfScreenHeight = screenHeight / 2.0f / myNewCamera.zoom;
-
-        // Clamp the camera target to map boundaries
-        const float cameraMargin = 24.0f / myNewCamera.zoom;
-
-        myNewCamera.target.x = clamp(myNewCamera.target.x, halfScreenWidth, cellSize * mapWidth - halfScreenWidth - cameraMargin);
-        myNewCamera.target.y = clamp(myNewCamera.target.y, halfScreenHeight, cellSize * mapHeight - halfScreenHeight - cameraMargin);
-
-        myPlayer.posx_abs = clamp(myPlayer.posx_abs, 0.0f + myPlayer.width / 2, float(cellSize * mapWidth - cameraMargin - myPlayer.width / 2));
-        myPlayer.posy_abs = clamp(myPlayer.posy_abs, 0.0f + myPlayer.height / 2, float(cellSize * mapHeight - cameraMargin - myPlayer.height / 2));
-
-        BeginDrawing();
-        ClearBackground(BLACK);
-        BeginMode2D(myNewCamera);
-
-        drawBackground();
-        DrawRectangle(myPlayer.posx_abs - myPlayer.width / 2, myPlayer.posy_abs - myPlayer.height / 2, myPlayer.width, myPlayer.height, WHITE);
-
-        // projectiles
-        for (int i = 0; i < proj.size(); i++)
-        {
-            if (proj[i].active)
-                DrawCircle(proj[i].x, proj[i].y, proj[i].hitbox, BLUE);
-        }
-
-        //collison points
-        for (int i = 0; i < 8; i++)
-        {
-            DrawCircle(myPlayer.posx_abs + collPoints[i].x, myPlayer.posy_abs + collPoints[i].y, 5, RED);
-        }
-
-        EndMode2D();
-        Vector2 mousePos = GetMousePosition();
-        Vector2 worldPos = { myPlayer.posx_coll, myPlayer.posy_coll };
-        //Vector2 screenPos = GetWorldToScreen2D(worldPos, myNewCamera); USELESS
-
-        // UI overlays (not affected by camera)
-        std::stringstream buffer;
-        buffer << "myCharId: " << myCharId;
-        buffer << '\n';
-        buffer << "Tile Id: " << returnTileId(myPlayer.posx_abs, myPlayer.posy_abs);
-        buffer << "\n pos_abs: " << myPlayer.posx_abs << " " << myPlayer.posy_abs;
-        buffer << "\n pos_coll: " << myPlayer.posx_coll << " " << myPlayer.posy_coll;
-        buffer << "\n camera target: " << myNewCamera.target.x << " " << myNewCamera.target.y;
-        buffer << "\n time elapsed: " << time_elapsed;
-        buffer << "\n mouse position: " << mousePos.x << " " << mousePos.y;
-        buffer << "\n zoom: " << myNewCamera.zoom;
-        buffer << "\n edit: " << bool(editMode);
-        //buffer << "\n on screen pos: " << screenPos.x << " " << screenPos.y; USELESS
-		buffer << "\n mapId: " << mapId;
-        DrawText(buffer.str().c_str(), 10, 10, 30, BLACK);
-
-        EndDrawing();
-
-		//end rendering
+        drawScreen();
 
         //end it here
         end = std::chrono::high_resolution_clock::now();
