@@ -51,7 +51,7 @@ void intitPlayerCollPoints()
     collPoints[7] = { -myPlayer.width / 2, 0 };
 }
 
-short int returnTileId(int x, int y)
+short int returnTileId(float x, float y)
 {
     return map[int(x / cellSize)][int(y / cellSize)];
 }
@@ -85,6 +85,7 @@ void read_map(int mapId, short int& width, short int& height)
         {
             for (int j = 0; j < height; j++)
             {
+                //map[i][j] = 8;
                 map[i][j] = 0;
                 //write << '0';
             }
@@ -317,19 +318,22 @@ void movePlayer()
     if (myPlayer.isMoving)
     {
         myPlayer.posx_abs += (myPlayer.speed) * cos(myPlayer.angle);
-        myPlayer.posx_abs = int(myPlayer.posx_abs);
+        //myPlayer.posx_abs = int(myPlayer.posx_abs);
         //if(myPlayer.posx_abs>=screenWidth/2)
            //myCamera.posx = myPlayer.posx_abs;
         
         myPlayer.posy_abs -= (myPlayer.speed) * sin(myPlayer.angle);
-        myPlayer.posy_abs = int(myPlayer.posy_abs);
+        //myPlayer.posy_abs = int(myPlayer.posy_abs);
 
         const float cameraMargin = 24.0f / myNewCamera.zoom;
 
         //if(myPlayer.posy_abs>=screenHeight/2)
             //myCamera.posy = myPlayer.posy_abs;
+    }
+    if(!editMode)
+    {
         checkCollision();
-        if(collActive[1] == 1 || collActive[3] == 1 || collActive[5] == 1 || collActive[7] == 1)
+        if (collActive[1] == 1 || collActive[3] == 1 || collActive[5] == 1 || collActive[7] == 1)
         {
             if (collActive[1] == 1)
             {
@@ -363,11 +367,11 @@ void movePlayer()
         else
         {
             srand(time(0));
-            int rndnr = rand() % 2; // worst way to implement collision, but it will do for now
+            int rndnr = rand(); // worst way to implement collision, but it will do for now
             //I WILL change it later
             if (myPlayer.angle == 0 || myPlayer.angle == PI || myPlayer.angle == PI / 2 || myPlayer.angle == 3 * PI / 2)
             {
-                while(returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                while (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
                 {
                     myPlayer.posx_abs += (2) * cos(myPlayer.angle + PI);
                     myPlayer.posx_abs = int(myPlayer.posx_abs);
@@ -375,50 +379,201 @@ void movePlayer()
                     myPlayer.posy_abs = int(myPlayer.posy_abs);
                 }
             }
-            else if(myPlayer.angle = PI / 4)
+            else if (myPlayer.angle = PI / 4)
             {
-                while (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                if (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8)
                 {
-                    myPlayer.posx_abs -= (2) * (rndnr % 2);
-                    myPlayer.posx_abs = int(myPlayer.posx_abs);
-                    myPlayer.posy_abs += (2) * ((rndnr + 1) % 2);
-                    myPlayer.posy_abs = int(myPlayer.posy_abs);
+                    while (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8)
+                    {
+                        myPlayer.posy_abs += (1);
+                    }
+                }
+                else if (returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8)
+                {
+                    while (returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8)
+                    {
+                        myPlayer.posx_abs -= (1);
+                    }
+                }
+                else if (returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8)
+                {
+                    Vector2 point1 = { myPlayer.posx_abs + collPoints[2].x,   myPlayer.posy_abs + collPoints[2].y }; //variable x
+                    Vector2 point2 = point1; // variable y
+                    int onx = 0, ony = 0;
+                    while (returnTileId(myPlayer.posx_abs + point1.x, myPlayer.posy_abs + point1.y) == 8 && returnTileId(myPlayer.posx_abs + point2.x, myPlayer.posy_abs + point2.y) == 8)
+                    {
+                        point1.x -= 0.09f;
+                        point2.y += 0.09f;
+                    }
+
+                    if (returnTileId(myPlayer.posx_abs + point1.x, myPlayer.posy_abs + point1.y) != 8 && returnTileId(myPlayer.posx_abs + point2.x, myPlayer.posy_abs + point2.y) != 8)
+                    {
+                        onx = 1;
+                        ony = 0;
+                    }
+                    else if (returnTileId(myPlayer.posx_abs + point1.x, myPlayer.posy_abs + point1.y) != 8)
+                    {
+                        onx = 1;
+                    }
+                    else if (returnTileId(myPlayer.posx_abs + point2.x, myPlayer.posy_abs + point2.y) != 8)
+                    {
+                        ony = 1;
+                    }
+
+                    while (returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8)
+                    {
+                        myPlayer.posx_abs -= (1) * onx;
+                        myPlayer.posy_abs += (1) * ony;
+                    }
                 }
             }
             else if (myPlayer.angle = 3 * PI / 4)
             {
-                while (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                if (returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8)
                 {
-                    myPlayer.posx_abs += (2) * (rndnr % 2);
-                    myPlayer.posx_abs = int(myPlayer.posx_abs);
-                    myPlayer.posy_abs += (2) * ((rndnr + 1) % 2);
-                    myPlayer.posy_abs = int(myPlayer.posy_abs);
+                    while (returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8)
+                    {
+                        myPlayer.posy_abs += (1);
+                    }
+                }
+                else if (returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                {
+                    while (returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                    {
+                        myPlayer.posx_abs += (1);
+                    }
+                }
+                else if (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8)
+                {
+                    Vector2 point1 = { myPlayer.posx_abs + collPoints[0].x,   myPlayer.posy_abs + collPoints[0].y }; //variable x
+                    Vector2 point2 = point1; // variable y
+                    int onx = 0, ony = 0;
+                    while (returnTileId(myPlayer.posx_abs + point1.x, myPlayer.posy_abs + point1.y) == 8 && returnTileId(myPlayer.posx_abs + point2.x, myPlayer.posy_abs + point2.y) == 8)
+                    {
+                        point1.x += 0.09f;
+                        point2.y += 0.09f;
+                    }
+
+                    if (returnTileId(myPlayer.posx_abs + point1.x, myPlayer.posy_abs + point1.y) != 8 && returnTileId(myPlayer.posx_abs + point2.x, myPlayer.posy_abs + point2.y) != 8)
+                    {
+                        onx = 1;
+                        ony = 0;
+                    }
+                    else if (returnTileId(myPlayer.posx_abs + point1.x, myPlayer.posy_abs + point1.y) != 8)
+                    {
+                        onx = 1;
+                    }
+                    else if (returnTileId(myPlayer.posx_abs + point2.x, myPlayer.posy_abs + point2.y) != 8)
+                    {
+                        ony = 1;
+                    }
+
+                    while (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8)
+                    {
+                        myPlayer.posx_abs += (1) * onx;
+                        myPlayer.posy_abs += (1) * ony;
+                    }
                 }
             }
             else if (myPlayer.angle = 5 * PI / 4)
             {
-                while (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                if (returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8)
                 {
-                    myPlayer.posx_abs += (2) * (rndnr % 2);
-                    myPlayer.posx_abs = int(myPlayer.posx_abs);
-                    myPlayer.posy_abs -= (2) * ((rndnr + 1) % 2);
-                    myPlayer.posy_abs = int(myPlayer.posy_abs);
+                    while (returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8)
+                    {
+                        myPlayer.posy_abs -= (1);
+                    }
+                }
+                else if (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8)
+                {
+                    while (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8)
+                    {
+                        myPlayer.posx_abs += (1);
+                    }
+                }
+                else if (returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                {
+                    Vector2 point1 = { myPlayer.posx_abs + collPoints[6].x,   myPlayer.posy_abs + collPoints[6].y }; //variable x
+                    Vector2 point2 = point1; // variable y
+                    int onx = 0, ony = 0;
+                    while (returnTileId(myPlayer.posx_abs + point1.x, myPlayer.posy_abs + point1.y) == 8 && returnTileId(myPlayer.posx_abs + point2.x, myPlayer.posy_abs + point2.y) == 8)
+                    {
+                        point1.x += 0.09f;
+                        point2.y -= 0.09f;
+                    }
+
+                    if (returnTileId(myPlayer.posx_abs + point1.x, myPlayer.posy_abs + point1.y) != 8 && returnTileId(myPlayer.posx_abs + point2.x, myPlayer.posy_abs + point2.y) != 8)
+                    {
+                        onx = 1;
+                        ony = 0;
+                    }
+                    else if (returnTileId(myPlayer.posx_abs + point1.x, myPlayer.posy_abs + point1.y) != 8)
+                    {
+                        onx = 1;
+                    }
+                    else if (returnTileId(myPlayer.posx_abs + point2.x, myPlayer.posy_abs + point2.y) != 8)
+                    {
+                        ony = 1;
+                    }
+
+                    while (returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                    {
+                        myPlayer.posx_abs += (1) * onx;
+                        myPlayer.posy_abs -= (1) * ony;
+                    }
                 }
             }
-            else if (myPlayer.angle = 7* PI / 4)
+            else if (myPlayer.angle = 7 * PI / 4)
             {
-                while (returnTileId(myPlayer.posx_abs + collPoints[0].x, myPlayer.posy_abs + collPoints[0].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8 || returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                if (returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
                 {
-                    myPlayer.posx_abs -= (2) * (rndnr % 2);
-                    myPlayer.posx_abs = int(myPlayer.posx_abs);
-                    myPlayer.posy_abs += (2) * ((rndnr + 1) % 2);
-                    myPlayer.posy_abs = int(myPlayer.posy_abs);
+                    while (returnTileId(myPlayer.posx_abs + collPoints[6].x, myPlayer.posy_abs + collPoints[6].y) == 8)
+                    {
+                        myPlayer.posy_abs -= (1);
+                    }
+                }
+                else if (returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8)
+                {
+                    while (returnTileId(myPlayer.posx_abs + collPoints[2].x, myPlayer.posy_abs + collPoints[2].y) == 8)
+                    {
+                        myPlayer.posx_abs -= (1);
+                    }
+                }
+                else if (returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8)
+                {
+                    Vector2 point1 = { myPlayer.posx_abs + collPoints[4].x,   myPlayer.posy_abs + collPoints[4].y }; //variable x
+                    Vector2 point2 = point1; // variable y
+                    int onx = 0, ony = 0;
+                    while (returnTileId(myPlayer.posx_abs + point1.x, myPlayer.posy_abs + point1.y) == 8 && returnTileId(myPlayer.posx_abs + point2.x, myPlayer.posy_abs + point2.y) == 8)
+                    {
+                        point1.x -= 0.09f;
+                        point2.y -= 0.09f;
+                    }
+
+                    if (returnTileId(myPlayer.posx_abs + point1.x, myPlayer.posy_abs + point1.y) != 8 && returnTileId(myPlayer.posx_abs + point2.x, myPlayer.posy_abs + point2.y) != 8)
+                    {
+                        onx = 1;
+                        ony = 0;
+                    }
+                    else if (returnTileId(myPlayer.posx_abs + point1.x, myPlayer.posy_abs + point1.y) != 8)
+                    {
+                        onx = 1;
+                    }
+                    else if (returnTileId(myPlayer.posx_abs + point2.x, myPlayer.posy_abs + point2.y) != 8)
+                    {
+                        ony = 1;
+                    }
+
+                    while (returnTileId(myPlayer.posx_abs + collPoints[4].x, myPlayer.posy_abs + collPoints[4].y) == 8)
+                    {
+                        myPlayer.posx_abs -= (1) * onx;
+                        myPlayer.posy_abs -= (1) * ony;
+                    }
                 }
             }
         }
-        
-        
     }
+
     myPlayer.posx_rel = (myPlayer.posx_abs - myNewCamera.target.x) * myNewCamera.zoom + screenWidth / 2;
     myPlayer.posy_rel = (myPlayer.posy_abs - myNewCamera.target.y) * myNewCamera.zoom + screenHeight / 2;
         
