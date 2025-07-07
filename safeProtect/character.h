@@ -5,12 +5,13 @@
 #include "projectile.h"
 #include "player.h"
 #include "csv_file.h"
+#include "effects.h"
 
 float degToRad(float angle);
 
 void initChar();
 void spawnProjectiles(int& myId, float playerx, float playery, float mousex, float mousey, player p, std::string type);
-void superAttack(int& myId, float playerx, float playery, float mousex, float mousey, player p, double moment_activated);
+void superAttack(int& myId, float playerx, float playery, float mousex, float mousey, player& p, double moment_activated);
 
 
 
@@ -18,6 +19,7 @@ class character
 {
 public:
 	std::string name="name";
+	float speed;
 	int hp;
 	int nrProjectiles=1;
 	std::vector <float> hitProjectiles;
@@ -43,4 +45,6 @@ public:
 
 extern std::vector <character> chars;
 extern std::vector <projectile> proj;
+extern std::vector <effect> effects;
 extern csv_file char_data;
+extern double time_elapsed;

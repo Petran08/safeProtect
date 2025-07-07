@@ -4,16 +4,19 @@
 #include "projectile.h"
 #include "player.h"
 #include "spawnable.h"
+#include "effects.h"
 
 std::vector <character> chars;
 std::vector <projectile> proj;
 std::vector <spawnable> spwn_info;
 std::vector <spawnable> spwn_render;
+std::vector <effect> effects;
 
 character init;
 projectile initProj;
 csv_file char_data;
 csv_file spwn_data;
+effect initEf;
 
 float degToRad(float angle)
 {
@@ -174,6 +177,7 @@ int stringToNr(std::string str)
 		 init.efVal = stringToNr(char_data.contents[i][19]);
 		 init.spwnId = stringToNr(char_data.contents[i][20]);
 		 init.sNewId = stringToNr(char_data.contents[i][21]);
+		 init.speed = stringToNr(char_data.contents[i][22]);
 		 chars.push_back(init);
 		 init.hitProjectiles.clear();
 		 init.projSpeed.clear();
@@ -281,10 +285,38 @@ int stringToNr(std::string str)
 	 }
  }
 
- void superAttack(int& myId, float playerx, float playery, float mousex, float mousey, player p, double moment_activated)
+ void superAttack(int& myId, float playerx, float playery, float mousex, float mousey, player& p, double moment_activated)
  {
+	 std::cout << time_elapsed;
 	 if (chars[myId].sAttType == "proj")
 	 {
 		 spawnProjectiles(myId, playerx, playery, mousex, mousey, p, "super");
+	 }
+	 else if (chars[myId].sAttType == "efct")
+	 {
+		 bool found = false;
+		 int dur = chars[myId].efDur, val = chars[myId].efVal;
+		 initEf.dur = dur;
+		 initEf.val = val;
+		 initEf.eff = chars[myId].ef;
+		 initEf.activated = moment_activated;
+		 for (int i = 0; i < effects.size() && !found; i++)
+		 {
+			 if (effects[i] == initEf)
+			 {
+				 effects[i] = initEf;
+				 found = true;
+			 }
+		 }
+		 if (!found)
+		 {
+			 effects.push_back(initEf);
+		 }
+		 std::cout << effects.size() << '\n';
+		 if (chars[myId].ef == "speed")
+		 {
+			 p.speed += val;
+			 p.speed = std::min(p.speed, 3 * p.oSpeed);
+		 }
 	 }
  }

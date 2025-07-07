@@ -12,6 +12,7 @@ public:
 	float width;
 	float height;
 	float angle = 0;
+	float oSpeed = 10;
 	float speed = 10;
 	bool isMoving = false;
 };

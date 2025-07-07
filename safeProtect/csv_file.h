@@ -6,8 +6,8 @@
 class csv_file
 {
 public:
-	std::string headers[40];
-	std::string contents[100][40];
+	std::string headers[100];
+	std::string contents[150][100];
 	std::string file_name;
 	int rows_used;
 	void read_file()

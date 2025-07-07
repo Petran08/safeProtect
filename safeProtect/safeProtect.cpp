@@ -12,6 +12,7 @@
 #include "projectile.h"
 #include "camera.h"
 #include "enemy.h"
+#include "effects.h"
 const int screenWidth = 1000;
 const int screenHeight = 600;
 const int mapSize = 10000;
@@ -37,6 +38,22 @@ T clamp(T val, T minVal, T maxVal) {
     if (val < minVal) return minVal;
     if (val > maxVal) return maxVal;
     return val;
+}
+
+void handleTime()
+{
+    //for effects
+    for (int i = 0; i < effects.size(); i++)
+    {
+        if (time_elapsed - effects[i].activated >= effects[i].val && effects[i].val > 0)
+        {
+            effects[i].val = 0;
+            if (effects[i].eff == "speed")
+            {
+                myPlayer.speed = myPlayer.oSpeed;
+            }
+        }
+    }
 }
 
 void intitPlayerCollPoints()
@@ -170,6 +187,8 @@ void getKeyboardInput()
         myChar = chars[myCharId];
         myPlayer.width = myChar.hitbox * 2;
         myPlayer.height = myChar.hitbox * 2;
+        myPlayer.oSpeed = myChar.speed;
+        myPlayer.speed = myChar.speed;
         intitPlayerCollPoints();
     }
     if (IsKeyPressed(KEY_Z))
@@ -288,6 +307,7 @@ void drawScreen()
         buffer << "\n edit: " << bool(editMode);
         //buffer << "\n on screen pos: " << screenPos.x << " " << screenPos.y; USELESS
 		buffer << "\n mapId: " << mapId;
+        buffer << "\n speed: " << myPlayer.speed;
         DrawText(buffer.str().c_str(), 10, 10, 30, BLACK);
 
         EndDrawing();
@@ -672,6 +692,8 @@ int main()
         time_elapsed += duration.count() / 1000.0;
         //start time here
         start = std::chrono::high_resolution_clock::now();
+
+        handleTime();
     }
     write_map(mapId, mapWidth, mapHeight);
     CloseWindow();
