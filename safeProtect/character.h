@@ -46,6 +46,5 @@ public:
 extern std::vector <character> chars;
 extern std::vector <projectile> proj;
 extern std::vector <effect> effects;
-extern effect currentEff;
 extern csv_file char_data;
 extern double time_elapsed;

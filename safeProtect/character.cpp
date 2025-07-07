@@ -287,7 +287,7 @@ int stringToNr(std::string str)
 
  void superAttack(int& myId, float playerx, float playery, float mousex, float mousey, player& p, double moment_activated)
  {
-	 std::cout << moment_activated << '\n';
+	 std::cout << time_elapsed;
 	 if (chars[myId].sAttType == "proj")
 	 {
 		 spawnProjectiles(myId, playerx, playery, mousex, mousey, p, "super");
@@ -299,9 +299,7 @@ int stringToNr(std::string str)
 		 initEf.dur = dur;
 		 initEf.val = val;
 		 initEf.eff = chars[myId].ef;
-		 initEf.id = myId;
 		 initEf.activated = moment_activated;
-		 initEf.active = true;
 		 for (int i = 0; i < effects.size() && !found; i++)
 		 {
 			 if (effects[i] == initEf)
@@ -314,12 +312,11 @@ int stringToNr(std::string str)
 		 {
 			 effects.push_back(initEf);
 		 }
-		 currentEff = initEf;
-		 //std::cout << effects.size() << '\n';
+		 std::cout << effects.size() << '\n';
 		 if (chars[myId].ef == "speed")
 		 {
 			 p.speed += val;
-			 p.speed = std::min(p.speed, 5 * p.oSpeed);
+			 p.speed = std::min(p.speed, 3 * p.oSpeed);
 		 }
 	 }
  }
