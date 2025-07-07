@@ -31,6 +31,7 @@ Camera2D myNewCamera;
 std::vector <enemy> enemies;
 Vector2 collPoints[8];
 short int collActive[8];
+effect currentEff;
 
 template <typename T>
 
@@ -45,10 +46,11 @@ void handleTime()
     //for effects
     for (int i = 0; i < effects.size(); i++)
     {
-        if (time_elapsed - effects[i].activated >= effects[i].val && effects[i].val > 0)
+        if (time_elapsed - effects[i].activated >= effects[i].dur && effects[i].active)
         {
-            effects[i].val = 0;
-            if (effects[i].eff == "speed")
+            effects[i].active = false;
+            currentEff.active = false;
+            if (effects[i].eff == "speed" && effects[i] == currentEff)
             {
                 myPlayer.speed = myPlayer.oSpeed;
             }
@@ -188,7 +190,10 @@ void getKeyboardInput()
         myPlayer.width = myChar.hitbox * 2;
         myPlayer.height = myChar.hitbox * 2;
         myPlayer.oSpeed = myChar.speed;
-        myPlayer.speed = myChar.speed;
+        if (!currentEff.active || currentEff.eff != "speed")
+        {
+            myPlayer.speed = myChar.speed;
+        }
         intitPlayerCollPoints();
     }
     if (IsKeyPressed(KEY_Z))
@@ -616,7 +621,7 @@ void getMouseInput()
         //std::cout << screenPos.x << " " << screenPos.y << '\n';
         spawnProjectiles(myCharId, worldPos.x, worldPos.y, float(mousePos.x), float(mousePos.y), myPlayer, "attack");
     }
-    else if (truen || IsKeyPressed(KEY_V))
+    if (truen || IsKeyPressed(KEY_V))
     {
         //Vector2 mousePos = GetMousePosition();
         Vector2 mousePos = GetMousePosition();
